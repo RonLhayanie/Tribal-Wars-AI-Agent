@@ -1,0 +1,22 @@
+{
+  "units": {
+    "spear": {"name_he": "נושא רומח", "speed": 18, "attack": 10, "def_inf": 15, "def_cav": 45, "def_arch": 20, "cap": 25},
+    "sword": {"name_he": "נושא חרב", "speed": 22, "attack": 25, "def_inf": 50, "def_cav": 15, "def_arch": 40, "cap": 15},
+    "axe": {"name_he": "לוחם גרזן", "speed": 18, "attack": 40, "def_inf": 10, "def_cav": 5, "def_arch": 10, "cap": 10},
+    "archer": {"name_he": "קשת", "speed": 18, "attack": 15, "def_inf": 50, "def_cav": 40, "def_arch": 5, "cap": 10},
+    "spy": {"name_he": "מרגל", "speed": 9, "attack": 0, "def_inf": 2, "def_cav": 1, "def_arch": 2, "cap": 0},
+    "light": {"name_he": "פרש קל", "speed": 10, "attack": 130, "def_inf": 30, "def_cav": 40, "def_arch": 30, "cap": 80},
+    "marcher": {"name_he": "קשת רכוב", "speed": 10, "attack": 120, "def_inf": 40, "def_cav": 30, "def_arch": 50, "cap": 50},
+    "heavy": {"name_he": "פרש כבד", "speed": 11, "attack": 150, "def_inf": 200, "def_cav": 80, "def_arch": 180, "cap": 50},
+    "ram": {"name_he": "איל ניגוח", "speed": 30, "attack": 2, "def_inf": 20, "def_cav": 50, "def_arch": 20, "cap": 0},
+    "catapult": {"name_he": "קטפולטה", "speed": 30, "attack": 100, "def_inf": 100, "def_cav": 50, "def_arch": 100, "cap": 0},
+    "noble": {"name_he": "אציל", "speed": 35, "attack": 30, "def_inf": 100, "def_cav": 50, "def_arch": 100, "cap": 0}
+  },
+  "config": {
+    "wall_bonus_per_level": 0.0535,
+    "max_hq_efficient": 20,
+    "ram_min_wall_20": 213,
+    "noble_train_gap_ms": 100
+  }
+}
+
