@@ -353,7 +353,7 @@ class TribalAgent:
             )
         )
 
-def ask(self, text: str, image_data=None):
+    def ask(self, text: str, image_data=None):
         max_retries = 3
         for attempt in range(max_retries):
             try:
