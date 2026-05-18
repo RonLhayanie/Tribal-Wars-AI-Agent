@@ -1,6 +1,7 @@
 import json
 import asyncio
 import logging
+import time
 import math
 import traceback
 import io
@@ -298,10 +299,10 @@ class TribalAgent:
            חובה עליך להריץ את ה-nuke_calculator עבור כל מטרה בנפרד (אפילו אם זה דורש 5 קריאות רצופות), 
            לסכם את סך הכוח הנדרש, ולחלק את הכוחות הקיימים של המשתמש לפי היחס המתמטי המדויק שיצא בחישובים.
         6. המחשבון שברשותך תקף לכל רמות החומה (0-20). לעולם אל תגיד שחסר לך מידע על חומות נמוכות.
-        7. פרוטוקול אופטימיזציה למזעור אבדות:
-           - אם המשתמש מגדיר כמות כוללת של משאבים (למשל: "יש לי 15 ניוקים"), עליך להשתמש בכולם.
-           - אל תציע לשמור רזרבות אלא אם התבקשת במפורש. 
-           - חלוקת הכוחות תתבצע באופן פרופורציונלי לרמת הקושי של המטרות (מטרה קשה יותר תקבל חלק גדול יותר מהעוגה), כדי להבטיח שהאבדות בכל אחת מהמתקפות יהיו מינימליות (Overstacking).
+        7. פרוטוקול אופטימיזציה למזעור אבדות (Overstacking - חובה קריטית!):
+            - כאשר אתה מריץ את nuke_calculator לחישוב התקפה, ואתה יודע כמה ניוקים יש למשתמש סך הכל (למשל "יש לי 10 ניוקים"), חובה עליך להעביר את המספר הזה לפרמטר num_nukes!
+            - חובה עליך לקחת את טקסט האזהרה שמחזירה הפונקציה בנוגע ל-Overstacking, ולהציג אותו למשתמש כבר בהודעה הראשונה שלך!
+            - לעולם אל תגיד למשתמש "יש לך מספיק כוח" ותעצור שם. עליך להמליץ לו אקטיבית לשלוח את כל הכוח כדי למזער אבדות.
         8. דינמיות לפי מטרת הלקוח:
            - זהה את כוונת המשתמש: אם הוא מבקש "כיבוש מהיר", תעדף כוח אש מרוכז. אם הוא מבקש "מינימום אבדות", פזר את הכוח באופן שממקסם את השרידות של כל ניוק.
         9. מחשבון קטפולטות (catapult_calculator): אם המשתמש שואל כמה קטפולטות צריך להריסת מבנה מרמה מסוימת לאחרת, חובה עליך להשתמש בכלי זה בלבד והצג לו את פקודת "רכבת הגלים" שהכלי מחזיר בדיוק כפי שהיא.
@@ -352,17 +353,25 @@ class TribalAgent:
             )
         )
 
-    def ask(self, text: str, image_data=None):
-        try:
-            content = [image_data, text] if image_data else text
-            return self.chat.send_message(content).text
-        except Exception as e:
-            error_msg = str(e)
-            if "503" in error_msg or "UNAVAILABLE" in error_msg:
-                return "יש כרגע עומס קל על השרתים המרכזיים. אנא נסה לשלוח את ההודעה שוב בעוד מספר שניות."
-            print("שגיאה בקריאה לג'מיני:")
-            traceback.print_exc()
-            raise
+def ask(self, text: str, image_data=None):
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                content = [image_data, text] if image_data else text
+                return self.chat.send_message(content).text
+            except Exception as e:
+                error_msg = str(e)
+                # אם יש עומס (503/429), מנסה שוב בשקט מאחורי הקלעים
+                if "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg or "quota" in error_msg.lower():
+                    if attempt < max_retries - 1:
+                        time.sleep(2 * (attempt + 1)) # מחכה 2 שניות, ואז 4 שניות...
+                        continue
+                    return "השרתים המרכזיים של הפיקוד בעומס כבד. ניסיתי להתחבר מספר פעמים ללא הצלחה. אנא המתן דקה ונסה שוב."
+                
+                print(f"שגיאה בקריאה לג'מיני (ניסיון {attempt + 1}):")
+                traceback.print_exc()
+                if attempt == max_retries - 1:
+                    raise
 
 # --- 4. טלגרם ---
 
