@@ -162,6 +162,28 @@ def calculate_distance(coord1: str, coord2: str):
     except Exception as e:
         return f"שגיאה בחישוב מרחק: {str(e)}"
 
+def find_villages_in_range(target_coord: str, max_hours: float, unit_speed: float):
+    """סריקה עמוקה של כל כפרי המשתמש בזיכרון למציאת טווחים"""
+    try:
+        t_coord = get_coord(target_coord)
+        tx, ty = map(int, t_coord.split('|'))
+        db = load_db()
+        results = []
+        max_dist = (max_hours * 60) / unit_speed
+        
+        for name, coord_val in db.items():
+            match = re.search(r'(\d+)[\|,]+(\d+)', str(coord_val))
+            if not match: continue
+            vx, vy = map(int, [match.group(1), match.group(2)])
+            dist = math.sqrt((tx - vx)**2 + (ty - vy)**2)
+            if dist <= max_dist:
+                arr_time = round((dist * unit_speed) / 60, 2)
+                results.append(f"• {name} ({vx}|{vy}) - הגעה ב-{arr_time} שעות")
+        
+        return "\n".join(results) if results else "לא נמצאו כפרים בטווח."
+    except Exception as e:
+        return f"שגיאה בסריקה: {str(e)}"
+
 def catapult_calculator(current_level: int, target_level: int):
     """
     מחשב כמה קטפולטות צריך כדי להרוס מבנה מרמה נוכחית לרמת מטרה.
@@ -302,7 +324,12 @@ class TribalAgent:
             - כאשר הלקוח מכריז על חוק כזה, חובה עליך להשתמש ב-manage_memory כדי לשמור אותו תחת מפתח ברור (למשל "חוקי_העולם_הנוכחי").
             - לפני כל מתן עצה אסטרטגית או חישוב, עליך לבדוק אם יש חוקים מיוחדים שנשמרו בזיכרון. 
             - חוקי הלקוח "דורסים" ומבטלים כל נתון סטטיסטי או אסטרטגיה קודמת שמוגדרת אצלך. עליך להתאים את התשובה והחישובים שלך אך ורק לחוקים שהמשתמש הגדיר.
-
+        14. מניעת חרטוטים (Anti-Hallucination) ולמידה מהלקוח:
+            - חל איסור מוחלט להמציא נתונים, תוצאות קרב, זמנים או שמות כפרים.
+            - ה-AI לעולם לא עושה מתמטיקה בעצמו! כל חישוב (זמן, מרחק, כוח אש) חייב לעבור אך ורק דרך הכלים (Tools) שקיבלת. 
+            - אם הלקוח מתקן אותך או אומר שטעית (למשל: "זה לא נכון, מהירות סוס היא 10"), חובה עליך להשתמש מיד בכלי manage_memory כדי לשמור את הנתון המתוקן שלו (save), להתנצל בקצרה, ולבצע את החישוב מחדש עם הנתון המעודכן.
+            - חל איסור מוחלט להחזיר תגובה ריקה. גם אם הפעלת כלי ששמר נתון ברקע, עליך לענות למשתמש במילים: "שמרתי את הנתון, ממשיך בחישוב..."
+            
         זהות וחוקי ברזל: 
         אתה "סוכן שבטי מלחמה", יועץ אסטרטגי עליון ורציני. אתה פועל אך ורק על בסיס מתמטיקה, אסטרטגיה ומסד נתונים.
         1. לעולם אל תודה שאתה בינה מלאכותית, מודל שפה או תוכנה.
@@ -320,7 +347,7 @@ class TribalAgent:
             model=self.model_id,
             config=types.GenerateContentConfig(
                 system_instruction=self.sys_prompt,
-                tools=[calculate_timing, get_optimal_scavenge, simulate_battle, calculate_distance, nuke_calculator, manage_memory, set_reminder, catapult_calculator],
+                tools=[calculate_timing, get_optimal_scavenge, simulate_battle, calculate_distance, nuke_calculator, manage_memory, set_reminder, catapult_calculator, find_villages_in_range],
                 automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=False)
             )
         )
