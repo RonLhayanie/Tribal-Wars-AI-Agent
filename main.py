@@ -17,17 +17,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# הגדרת לוגים לטרמינל
+# Terminal logging setup
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# --- 1. שכבת הנתונים והזיכרון ---
+# --- 1. Data and memory layer ---
 
 def load_data():
     try:
         with open('data.json', 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        print(f"שגיאה בטעינת data.json: {e}")
+        print(f"Failed to load data.json: {e}")
         return {}
 
 DATA = load_data()
@@ -50,13 +50,13 @@ def clean_num(val):
         return 0
 
 def get_coord(val: str) -> str:
-    """מתרגם שם כפר לקואורדינטה מתוך הזיכרון, או מחזיר את הקואורדינטה אם כבר הוזנה"""
+    """Resolve a village name to coordinates from memory, or pass through an existing coordinate pair."""
     val_str = str(val).strip()
-    # בודק אם זה כבר מספר (למשל 500|500)
+    # Already a coordinate pair (e.g. 500|500)
     match = re.search(r'(\d+)[\|,]+(\d+)', val_str)
     if match: return f"{match.group(1)}|{match.group(2)}"
     
-    # אם זה טקסט, מחפש בזיכרון
+    # Otherwise treat it as a name and look it up in memory
     db = load_db()
     for k, v in db.items():
         if val_str.lower() in k.lower():
@@ -65,19 +65,19 @@ def get_coord(val: str) -> str:
             
     raise ValueError(f"לא מצאתי קואורדינטות בזיכרון עבור '{val_str}'")
 
-# --- 2. כלי עבודה (Tools) ---
+# --- 2. Tools ---
 
-# משתנים גלובליים זמניים כדי שהכלים יוכלו לגשת לטלגרם
+# Temporary globals so tools can reach the active Telegram chat
 current_bot = None
 current_chat_id = None
 
-# הפונקציה האמיתית שסופרת לאחור ברקע
+# Background task that waits, then fires the reminder
 async def delayed_reminder_task(bot, chat_id, delay_in_seconds, reminder_text):
     await asyncio.sleep(delay_in_seconds)
     try:
         await bot.send_message(chat_id=chat_id, text=f"**התראה מבצעית:**\n{reminder_text}", parse_mode='Markdown')
     except Exception as e:
-        print(f"שגיאה בשליחת התראה: {e}")
+        print(f"Failed to send reminder: {e}")
 
 def set_reminder(minutes: float, message: str):
     """מגדיר תזכורת שתישלח למשתמש בעוד מספר דקות מסוים (ניתן להזין גם שברים, למשל 0.5 עבור חצי דקה)"""
@@ -196,7 +196,7 @@ def catapult_calculator(current_level: int, target_level: int):
         if current_level <= target_level:
             return "שגיאה: רמת המטרה צריכה להיות נמוכה מהרמה הנוכחית."
             
-        # טבלת קטפולטות מדויקת להורדת רמה אחת בודדת
+        # Catapults required to drop a building by exactly one level
         cats_per_level = {
             30: 20, 29: 19, 28: 17, 27: 16, 26: 15, 25: 13, 24: 12, 23: 11, 22: 10, 21: 10,
             20: 9, 19: 8, 18: 8, 17: 7, 16: 6, 15: 6, 14: 6, 13: 5, 12: 5, 11: 4, 10: 4,
@@ -206,7 +206,7 @@ def catapult_calculator(current_level: int, target_level: int):
         total_cats = 0
         waves = []
         
-        # חישוב הרכבת מטה
+        # Walk down one level at a time
         for lvl in range(current_level, target_level, -1):
             needed = cats_per_level.get(lvl, 2)
             total_cats += needed
@@ -236,7 +236,7 @@ def nuke_calculator(action: str, wall: int, num_nukes: int = 0, def_troops: dict
             
             result_text = f"תוצאת מחשבון הניוקים: תצטרך בערך {min_nukes_rounded} ניוקים מלאים לנקות את הכפר בחומה {wall}."
             
-            # הוספת הגיון ה-Overstacking למחשבון עצמו
+            # Overstacking guidance
             if num_nukes > min_nukes_rounded:
                 ratio = round(num_nukes / max(needed_nukes, 0.1), 1) 
                 result_text += f"\nנתון אסטרטגי: שליחת כל {num_nukes} הניוקים הזמינים תספק כוח של פי {ratio} מהמינימום הנדרש (Overstacking), מה שיקטין את האבדות בצורה דרמטית. חובה להמליץ על כך למשתמש."
@@ -361,21 +361,21 @@ class TribalAgent:
                 return self.chat.send_message(content).text
             except Exception as e:
                 error_msg = str(e)
-                # אם יש עומס (503/429), מנסה שוב בשקט מאחורי הקלעים
+                # On 503/429 (overload or quota) retry quietly instead of surfacing the error
                 if "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg or "quota" in error_msg.lower():
                     if attempt < max_retries - 1:
-                        time.sleep(2 * (attempt + 1)) # מחכה 2 שניות, ואז 4 שניות...
+                        time.sleep(2 * (attempt + 1)) # waits 2s, then 4s
                         continue
                     return "השרתים המרכזיים של הפיקוד בעומס כבד. ניסיתי להתחבר מספר פעמים ללא הצלחה. אנא המתן דקה ונסה שוב."
                 
-                print(f"שגיאה בקריאה לג'מיני (ניסיון {attempt + 1}):")
+                print(f"Gemini call failed (attempt {attempt + 1}):")
                 traceback.print_exc()
                 if attempt == max_retries - 1:
                     raise
 
-# --- 4. טלגרם ---
+# --- 3. Telegram ---
 
-# מושך את הטוקנים בצורה מאובטחת
+# Credentials are read from the environment
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
@@ -421,17 +421,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = agent.ask(text, image_data)
         await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=s.message_id, text=res or "לא התקבלה תשובה.")
     except Exception as e:
-        logging.error(f"שגיאה: {e}")
+        logging.error(f"Unhandled error while processing message: {e}")
         await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=s.message_id, text="שגיאה פנימית. מסתכל בטרמינל (PowerShell) כדי להבין למה.")
 
 if __name__ == '__main__':
     if not TELEGRAM_TOKEN or TELEGRAM_TOKEN == "*":
-        print("שגיאה: חסר טוקן טלגרם.")
+        print("Error: TELEGRAM_TOKEN is not set.")
         exit(1)
 
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.Regex(r'^(עזרה|help|Help)$'), help_command))
     app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, handle_message))
-    print("סוכן שבטי מלחמה באוויר!")
+    print("Tribal Wars agent is running.")
     app.run_polling()
