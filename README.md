@@ -73,6 +73,12 @@ The bot starts long polling. Send it a message, or `/help` for the command menu.
 constants) and is loaded once at startup. It is injected into the system prompt so the model
 can reason about units without a tool call.
 
+## Deployment
+
+Runs on Railway as a `worker` process - there is no HTTP server, the bot uses Telegram long
+polling. `Procfile` declares the start command; `GEMINI_KEY` and `TELEGRAM_TOKEN` are set as
+Railway environment variables rather than committed.
+
 ## Structure
 
 ```
