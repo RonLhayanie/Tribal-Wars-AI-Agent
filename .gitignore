@@ -1,5 +1,8 @@
 .env
 
+# Client game data written at runtime by manage_memory
+users_db.json
+
 __pycache__/
 *.py[cod]
 .venv/
