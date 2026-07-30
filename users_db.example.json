@@ -1,0 +1,8 @@
+{
+    "village 001": "500|500",
+    "village 002": "502|498",
+    "village 003": "497|505",
+    "enemy capital": "530|470",
+    "world_rules": "no archers, night bonus 23:00-08:00",
+    "player_villages_coords": "500|500,502|498,497|505,499|501,503|503"
+}

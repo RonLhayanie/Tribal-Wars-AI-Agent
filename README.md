@@ -76,11 +76,21 @@ can reason about units without a tool call.
 ## Structure
 
 ```
-main.py            everything: data layer, tools, agent class, Telegram handlers
-data.json          static game constants
-users_db.json      persistent key-value memory written by manage_memory
+main.py                  everything: data layer, tools, agent class, Telegram handlers
+data.json                static game constants
+users_db.json            persistent key-value memory written by manage_memory (gitignored)
+users_db.example.json    sample memory file showing the expected shape
 requirements.txt
 ```
+
+`users_db.json` holds live client data and is not tracked. Copy the example to get started:
+
+```bash
+cp users_db.example.json users_db.json
+```
+
+The file is a flat map of names to values. Coordinates are stored as `"x|y"` strings;
+`manage_memory` will also write free-text entries such as world rules.
 
 ## Language
 
